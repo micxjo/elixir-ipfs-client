@@ -31,6 +31,7 @@ defmodule IpfsClient.Mixfile do
      {:poison, "~> 1.5"},
      {:dogma, "~> 0.0", only: :dev},
      {:earmark, "~> 0.1", only: :dev},
-     {:ex_doc, "~> 0.11", only: :dev}]
+     {:ex_doc, "~> 0.11", only: :dev},
+     {:mock, "~> 0.1.1", only: :test}]
   end
 end

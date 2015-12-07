@@ -22,6 +22,13 @@ defmodule IPFS.Client do
     IPFS.Client.Version.decode(body)
   end
 
+  @spec swarm_peers(t) :: [String.t]
+  def swarm_peers(client \\ %__MODULE__{}) do
+    %{status_code: 200, body: body} = HTTPoison.get!(
+      make_url(client, "swarm/peers"))
+    Poison.decode!(body)["Strings"]
+  end
+
   @spec make_url(t, String.t) :: String.t
   defp make_url(%__MODULE__{host: host, port: port}, path) do
     "http://#{host}:#{port}/api/v0/#{path}"

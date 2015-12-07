@@ -34,4 +34,26 @@ defmodule ClientTest do
         "/ip4/4.4.4.1/tcp/2777/ipfs/hash"]
     end
   end
+
+  test "Test swarm_addrs request" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/swarm/addrs") ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"Addrs": {
+                                 "a_valid_hash_code": [
+                                   "/ip4/127.0.0.1/tcp/4001",
+                                   "/ip6/::1/tcp/4201"],
+                                 "another_hash": [
+                                   "/ip4/4.4.4.1/tcp/42"],
+                                 "an_empty_one": []}}
+                                 """} end] do
+      assert IPFS.Client.swarm_addrs == %{
+        "a_valid_hash_code" => ["/ip4/127.0.0.1/tcp/4001",
+                                "/ip6/::1/tcp/4201"],
+        "another_hash" => ["/ip4/4.4.4.1/tcp/42"],
+        "an_empty_one" => []}
+    end 
+  end
 end

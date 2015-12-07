@@ -54,6 +54,31 @@ defmodule ClientTest do
                                 "/ip6/::1/tcp/4201"],
         "another_hash" => ["/ip4/4.4.4.1/tcp/42"],
         "an_empty_one" => []}
-    end 
+    end
+  end
+
+  test "Test object_get request" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/object/get/a_key") ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"Links": [{"Name": "index.html",
+                                           "Hash": "hash_of_index",
+                                           "Size": 4118930},
+                                          {"Name": "main.js",
+                                           "Hash": "hash_of_js",
+                                           "Size": 683024}],
+                                "Data": "\u0008\u0001"}
+                                """} end] do
+      assert IPFS.Client.object_get("a_key") == %IPFS.Client.Object{
+        links: [%IPFS.Client.Link{name: "index.html",
+                                  hash: "hash_of_index",
+                                  size: 4118930},
+                %IPFS.Client.Link{name: "main.js",
+                                  hash: "hash_of_js",
+                                  size: 683024}],
+        data: <<8, 1>>}
+    end
   end
 end

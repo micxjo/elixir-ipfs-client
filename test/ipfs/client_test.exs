@@ -81,4 +81,14 @@ defmodule ClientTest do
         data: <<8, 1>>}
     end
   end
+
+  test "Test block_get request" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/block/get/a_key") ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: <<42, 43, 44>>} end] do
+      assert IPFS.Client.block_get("a_key") == <<42, 43, 44>>
+    end
+  end
 end

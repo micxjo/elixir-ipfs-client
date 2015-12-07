@@ -36,6 +36,13 @@ defmodule IPFS.Client do
     Poison.decode!(body)["Addrs"]
   end
 
+  @spec block_get(t, String.t) :: binary
+  def block_get(client \\ %__MODULE__{}, key) do
+    %{status_code: 200, body: body} = HTTPoison.get!(
+      make_url(client, "block/get/#{key}"))
+    body
+  end
+
   @spec object_get(t, String.t) :: IPFS.Client.Object.t
   def object_get(client \\ %__MODULE__{}, key) do
     %{status_code: 200, body: body} = HTTPoison.get!(

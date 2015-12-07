@@ -17,44 +17,51 @@ defmodule IPFS.Client do
   """
   @spec version(t) :: IPFS.Client.Version.t
   def version(client \\ %__MODULE__{}) do
-    %{status_code: 200, body: body} = HTTPoison.get!(
-      make_url(client, "version"))
-    IPFS.Client.Version.decode(body)
+    client
+    |> request("version")
+    |> IPFS.Client.Version.decode
   end
 
   @spec swarm_peers(t) :: [String.t]
   def swarm_peers(client \\ %__MODULE__{}) do
-    %{status_code: 200, body: body} = HTTPoison.get!(
-      make_url(client, "swarm/peers"))
-    Poison.decode!(body)["Strings"]
+    client
+    |> request("swarm/peers")
+    |> Poison.decode!
+    |> Map.get("Strings")
   end
 
   @spec swarm_addrs(t) :: %{String.t => [String.t]}
   def swarm_addrs(client \\ %__MODULE__{}) do
-    %{status_code: 200, body: body} = HTTPoison.get!(
-      make_url(client, "swarm/addrs"))
-    Poison.decode!(body)["Addrs"]
+    client
+    |> request("swarm/addrs")
+    |> Poison.decode!
+    |> Map.get("Addrs")
   end
 
   @spec block_get(t, String.t) :: binary
   def block_get(client \\ %__MODULE__{}, key) do
-    %{status_code: 200, body: body} = HTTPoison.get!(
-      make_url(client, "block/get/#{key}"))
-    body
+    request(client, "block/get/#{key}")
   end
 
   @spec object_get(t, String.t) :: IPFS.Client.Object.t
   def object_get(client \\ %__MODULE__{}, key) do
-    %{status_code: 200, body: body} = HTTPoison.get!(
-      make_url(client, "object/get/#{key}"))
-    IPFS.Client.Object.decode(body)
+    client
+    |> request("object/get/#{key}")
+    |> IPFS.Client.Object.decode
   end
 
   @spec object_stat(t, String.t) :: IPFS.Client.ObjectStat.t
   def object_stat(client \\ %__MODULE__{}, key) do
-    %{status_code: 200, body: body} = HTTPoison.get!(
-      make_url(client, "object/stat/#{key}"))
-    IPFS.Client.ObjectStat.decode(body)
+    client
+    |> request("object/stat/#{key}")
+    |> IPFS.Client.ObjectStat.decode
+  end
+
+  @spec request(t, String.t) :: binary
+  defp request(client, path) do
+    url = make_url(client, path)
+    %{status_code: 200, body: body} = HTTPoison.get!(url)
+    body
   end
 
   @spec make_url(t, String.t) :: String.t

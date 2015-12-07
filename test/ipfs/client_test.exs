@@ -82,6 +82,29 @@ defmodule ClientTest do
     end
   end
 
+  test "Test object_stat request" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/object/stat/a_key") ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"Hash": "a_key",
+                                "NumLinks": 4,
+                                "BlockSize": 5,
+                                "LinksSize": 3,
+                                "DataSize": 500,
+                                "CumulativeSize": 7000}
+                                """} end] do
+      assert IPFS.Client.object_stat("a_key") == %IPFS.Client.ObjectStat{
+        hash: "a_key",
+        num_links: 4,
+        block_size: 5,
+        links_size: 3,
+        data_size: 500,
+        cumulative_size: 7000}
+    end
+  end
+
   test "Test block_get request" do
     with_mock HTTPoison, [get!: fn(
                            "http://localhost:5001/api/v0/block/get/a_key") ->

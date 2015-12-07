@@ -50,6 +50,13 @@ defmodule IPFS.Client do
     IPFS.Client.Object.decode(body)
   end
 
+  @spec object_stat(t, String.t) :: IPFS.Client.ObjectStat.t
+  def object_stat(client \\ %__MODULE__{}, key) do
+    %{status_code: 200, body: body} = HTTPoison.get!(
+      make_url(client, "object/stat/#{key}"))
+    IPFS.Client.ObjectStat.decode(body)
+  end
+
   @spec make_url(t, String.t) :: String.t
   defp make_url(%__MODULE__{host: host, port: port}, path) do
     "http://#{host}:#{port}/api/v0/#{path}"
@@ -98,5 +105,33 @@ defmodule IPFS.Client.Object do
                                           hash: l["Hash"],
                                           size: l["Size"]} end)
     %IPFS.Client.Object{data: map["Data"], links: links}
+  end
+end
+
+defmodule IPFS.Client.ObjectStat do
+  @moduledoc """
+  Information about an IPFS object.
+  """
+  defstruct [hash: "", num_links: 0, block_size: 0,
+             links_size: 0, data_size: 0, cumulative_size: 0]
+
+  @type t :: %IPFS.Client.ObjectStat{
+    hash: String.t,
+    num_links: non_neg_integer,
+    block_size: non_neg_integer,
+    links_size: non_neg_integer,
+    data_size: non_neg_integer,
+    cumulative_size: non_neg_integer}
+
+  @spec decode(binary) :: t
+  def decode(json) do
+    map = Poison.decode!(json)
+    %IPFS.Client.ObjectStat{
+      hash: map["Hash"],
+      num_links: map["NumLinks"],
+      block_size: map["BlockSize"],
+      links_size: map["LinksSize"],
+      data_size: map["DataSize"],
+      cumulative_size: map["CumulativeSize"]}
   end
 end

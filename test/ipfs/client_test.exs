@@ -11,9 +11,10 @@ defmodule ClientTest do
                              "Commit": "commit_1"}
                              """} end] do
       client = IPFS.Client.new("example.com", 6001)
-      assert IPFS.Client.version(client) == %IPFS.Client.Version{
-        version: "an_awesome_version",
-        commit: "commit_1"}
+      assert IPFS.Client.version(client) == {
+        :ok, %IPFS.Client.Version{
+          version: "an_awesome_version",
+          commit: "commit_1"}}
     end
   end
 
@@ -25,9 +26,10 @@ defmodule ClientTest do
                              {"Version": "an_awesome_version",
                              "Commit": "commit_1"}
                              """} end] do
-      assert IPFS.Client.version == %IPFS.Client.Version{
+      assert IPFS.Client.version == {
+        :ok, %IPFS.Client.Version{
         version: "an_awesome_version",
-        commit: "commit_1"}
+        commit: "commit_1"}}
     end
   end
 
@@ -40,9 +42,9 @@ defmodule ClientTest do
                                {"Strings": ["/ip4/127.0.0.1/tcp/4001/ipfs/blah",
                                "/ip4/4.4.4.1/tcp/2777/ipfs/hash"]}
                                """} end] do
-      assert IPFS.Client.swarm_peers == [
-        "/ip4/127.0.0.1/tcp/4001/ipfs/blah",
-        "/ip4/4.4.4.1/tcp/2777/ipfs/hash"]
+      assert IPFS.Client.swarm_peers == {
+        :ok, ["/ip4/127.0.0.1/tcp/4001/ipfs/blah",
+              "/ip4/4.4.4.1/tcp/2777/ipfs/hash"]}
     end
   end
 
@@ -60,11 +62,12 @@ defmodule ClientTest do
                                    "/ip4/4.4.4.1/tcp/42"],
                                  "an_empty_one": []}}
                                  """} end] do
-      assert IPFS.Client.swarm_addrs == %{
-        "a_valid_hash_code" => ["/ip4/127.0.0.1/tcp/4001",
-                                "/ip6/::1/tcp/4201"],
-        "another_hash" => ["/ip4/4.4.4.1/tcp/42"],
-        "an_empty_one" => []}
+      assert IPFS.Client.swarm_addrs == {
+        :ok, %{
+          "a_valid_hash_code" => ["/ip4/127.0.0.1/tcp/4001",
+                                  "/ip6/::1/tcp/4201"],
+          "another_hash" => ["/ip4/4.4.4.1/tcp/42"],
+          "an_empty_one" => []}}
     end
   end
 
@@ -80,9 +83,9 @@ defmodule ClientTest do
                                "/ip6/::1/tcp/4201"
                                ]}
                                """} end] do
-      assert IPFS.Client.swarm_addrs_local == [
-        "/ip4/127.0.0.1/tcp/4001",
-        "/ip6/::1/tcp/4201"]
+      assert IPFS.Client.swarm_addrs_local == {
+        :ok, ["/ip4/127.0.0.1/tcp/4001",
+              "/ip6/::1/tcp/4201"]}
     end
   end
 
@@ -100,14 +103,15 @@ defmodule ClientTest do
                                            "Size": 683024}],
                                 "Data": "\u0008\u0001"}
                                 """} end] do
-      assert IPFS.Client.object_get("a_key") == %IPFS.Client.Object{
-        links: [%IPFS.Client.Link{name: "index.html",
-                                  hash: "hash_of_index",
-                                  size: 4118930},
-                %IPFS.Client.Link{name: "main.js",
-                                  hash: "hash_of_js",
-                                  size: 683024}],
-        data: <<8, 1>>}
+      assert IPFS.Client.object_get("a_key") == {
+        :ok, %IPFS.Client.Object{
+          links: [%IPFS.Client.Link{name: "index.html",
+                                    hash: "hash_of_index",
+                                    size: 4118930},
+                  %IPFS.Client.Link{name: "main.js",
+                                    hash: "hash_of_js",
+                                    size: 683024}],
+          data: <<8, 1>>}}
     end
   end
 
@@ -124,13 +128,14 @@ defmodule ClientTest do
                                 "DataSize": 500,
                                 "CumulativeSize": 7000}
                                 """} end] do
-      assert IPFS.Client.object_stat("a_key") == %IPFS.Client.ObjectStat{
-        hash: "a_key",
-        num_links: 4,
-        block_size: 5,
-        links_size: 3,
-        data_size: 500,
-        cumulative_size: 7000}
+      assert IPFS.Client.object_stat("a_key") == {
+        :ok, %IPFS.Client.ObjectStat{
+          hash: "a_key",
+          num_links: 4,
+          block_size: 5,
+          links_size: 3,
+          data_size: 500,
+          cumulative_size: 7000}}
     end
   end
 
@@ -140,7 +145,7 @@ defmodule ClientTest do
                              %HTTPoison.Response{
                                status_code: 200,
                                body: <<42, 43, 44>>} end] do
-      assert IPFS.Client.block_get("a_key") == <<42, 43, 44>>
+      assert IPFS.Client.block_get("a_key") == {:ok, <<42, 43, 44>>}
     end
   end
 
@@ -158,14 +163,15 @@ defmodule ClientTest do
                                "AgentVersion": "go-ipfs/0.3.11-dev",
                                "ProtocolVersion": "ipfs/0.1.0"}
                                """} end] do
-      assert IPFS.Client.local_id == %IPFS.Client.ID{
-        id: "a_peer_id",
-        public_key: "CAAPubKey0123",
-        addresses: [
-          "/ip4/127.0.0.1/tcp/4001/ipfs/a_peer_id",
-          "/ip6/::1/tcp/4001/ipfs/a_peer_id"],
-        agent_version: "go-ipfs/0.3.11-dev",
-        protocol_version: "ipfs/0.1.0"}
+      assert IPFS.Client.local_id == {
+        :ok, %IPFS.Client.ID{
+          id: "a_peer_id",
+          public_key: "CAAPubKey0123",
+          addresses: [
+            "/ip4/127.0.0.1/tcp/4001/ipfs/a_peer_id",
+            "/ip6/::1/tcp/4001/ipfs/a_peer_id"],
+          agent_version: "go-ipfs/0.3.11-dev",
+          protocol_version: "ipfs/0.1.0"}}
     end
   end
 
@@ -183,14 +189,15 @@ defmodule ClientTest do
                                "AgentVersion": "go-ipfs/0.3.11-dev",
                                "ProtocolVersion": "ipfs/0.1.0"}
                                """} end] do
-      assert IPFS.Client.id("a_peer_id") == %IPFS.Client.ID{
-        id: "a_peer_id",
-        public_key: "CAAPubKey0123",
-        addresses: [
-          "/ip4/127.0.0.1/tcp/4001/ipfs/a_peer_id",
-          "/ip6/::1/tcp/4001/ipfs/a_peer_id"],
-        agent_version: "go-ipfs/0.3.11-dev",
-        protocol_version: "ipfs/0.1.0"}
+      assert IPFS.Client.id("a_peer_id") == {
+        :ok, %IPFS.Client.ID{
+          id: "a_peer_id",
+          public_key: "CAAPubKey0123",
+          addresses: [
+            "/ip4/127.0.0.1/tcp/4001/ipfs/a_peer_id",
+            "/ip6/::1/tcp/4001/ipfs/a_peer_id"],
+          agent_version: "go-ipfs/0.3.11-dev",
+          protocol_version: "ipfs/0.1.0"}}
     end
   end
 
@@ -203,9 +210,29 @@ defmodule ClientTest do
                                {"Peers":["/ip4/127.0.0.1/tcp/4001/ipfs/abc",
                                "/ip6/::1/udp/4001"]}
                                """} end] do
-      assert IPFS.Client.bootstrap_list == [
-        "/ip4/127.0.0.1/tcp/4001/ipfs/abc",
-        "/ip6/::1/udp/4001"]
+      assert IPFS.Client.bootstrap_list == {
+        :ok, ["/ip4/127.0.0.1/tcp/4001/ipfs/abc",
+              "/ip6/::1/udp/4001"]}
+    end
+  end
+
+  test "JSON parse failure" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/version") ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: "qwerty123"} end] do
+      assert {:error, _err} = IPFS.Client.version
+    end
+  end
+
+  test "HTTP error" do
+    with_mock HTTPoison, [get!: fn(
+                            "http://localhost:5001/api/v0/version") ->
+                              %HTTPoison.Response{
+                                status_code: 404,
+                                body: "404 Not Found"} end] do
+      assert {:error, _err} = IPFS.Client.version
     end
   end
 end

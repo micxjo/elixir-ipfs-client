@@ -4,12 +4,19 @@ defmodule IPFS.Client do
   """
   defstruct host: "localhost", port: 5001
 
+  @typedoc "A TCP port"
   @type port_number :: 0..65535
+
+  @typedoc "A connection to an IPFS node"
   @type t :: %__MODULE__{host: String.t, port: port_number}
-  @type response(success_t) :: {:ok, success_t} | {:error, any}
 
   @doc ~S"""
-  Create a new client pointing at the provided host and port.
+  Creates a new client pointing at the provided host and port.
+
+  ## Example
+
+      iex> IPFS.Client.new("localhost", 5002)
+      %IPFS.Client{host: "localhost", port: 5002}
   """
   @spec new(String.t, port_number) :: t
   def new(host, port) do
@@ -17,14 +24,14 @@ defmodule IPFS.Client do
   end
 
   @doc ~S"""
-  Get version details from the IPFS node.
+  Gets version details from the IPFS node.
 
-  ## Examples
+  ## Example
 
       iex> IPFS.Client.version
-      %IPFS.Client.Version{version: "0.3.9", commit: "43622bs"}
+      {:ok, %IPFS.Client.Version{version: "0.3.9", commit: "43622bs"}}
   """
-  @spec version(t) :: response(IPFS.Client.Version.t)
+  @spec version(t) :: {:ok, IPFS.Client.Version.t} | {:error, any}
   def version(client \\ %__MODULE__{}) do
     client
     |> request("version")
@@ -32,9 +39,16 @@ defmodule IPFS.Client do
   end
 
   @doc ~S"""
-  Get a list of the set of peers the node is connected to.
+  Gets the list of peers that the node is connected to.
+
+  ## Example
+
+      iex> IPFS.Client.swarm_peers
+      {:ok, ["/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
+            "/ip4/104.236.176.52/tcp/4001/ipfs/QmSoLnSGccFuZQJzRadHn95W2CrSFmZuTdDWP8HXaHca9z",
+            "/ip4/104.236.151.122/tcp/4001/ipfs/QmSoLju6m7xTh3DuokvT3886QRYqxAzb1kShaanJgW36yx"]}
   """
-  @spec swarm_peers(t) :: response([String.t])
+  @spec swarm_peers(t) :: {:ok, [String.t]} | {:error, any}
   def swarm_peers(client \\ %__MODULE__{}) do
     case client |> request("swarm/peers") |> decode do
       {:ok, map} -> {:ok, Map.get(map, "Strings")}
@@ -43,9 +57,21 @@ defmodule IPFS.Client do
   end
 
   @doc ~S"""
-  Get a list of known addresses.
+  Gets a list of known addresses.
+
+  ## Example
+
+      iex> IPFS.Client.swarm_addrs
+      {:ok, %{"QmNRCEwFMgCcbjNk5bFud9oqjJduvjBNbkiM8SuxuLh3GS" =>
+               ["/ip4/127.0.0.1/tcp/4001",
+                "/ip4/172.17.42.1/tcp/4001",
+                "/ip4/192.168.2.3/tcp/4001",
+                "/ip6/::1/tcp/4001"],
+              "QmNRV7kyUxYaQ4KQxFXPYm8EfuzJbtGn1wSFenjXL6LD8y" =>
+               ["/ip4/127.0.0.1/tcp/4001",
+                "/ip6/2a01:4f8:161:124a::1337:cafe/tcp/4001"]}}
   """
-  @spec swarm_addrs(t) :: response(%{String.t => [String.t]})
+  @spec swarm_addrs(t) :: {:ok, %{String.t => [String.t]}} | {:error, any}
   def swarm_addrs(client \\ %__MODULE__{}) do
     case client |> request("swarm/addrs") |> decode do
       {:ok, map} -> {:ok, Map.get(map, "Addrs")}
@@ -54,9 +80,16 @@ defmodule IPFS.Client do
   end
 
   @doc ~S"""
-  Get a list of the node's local addresses.
+  Gets a list of the node's local addresses.
+
+  ## Example
+
+      iex> IPFS.Client.swarm_addrs_local
+      {:ok, ["/ip4/127.0.0.1/tcp/4001", 
+             "/ip4/192.168.1.2/tcp/4001", 
+             "/ip6/::1/tcp/4001"]
   """
-  @spec swarm_addrs_local(t) :: response([String.t])
+  @spec swarm_addrs_local(t) :: {:ok, [String.t]} | {:error, any}
   def swarm_addrs_local(client \\ %__MODULE__{}) do
     case client |> request("swarm/addrs/local") |> decode do
       {:ok, map} -> {:ok, Map.get(map, "Strings")}
@@ -65,17 +98,30 @@ defmodule IPFS.Client do
   end
 
   @doc ~S"""
-  Fetch a raw IPFS block.
+  Gets a raw IPFS block.
+
+  ## Example
+
+       iex> IPFS.Client.block_get("QmaCsr3YEv2BAwe")
+       {:ok, <<0, 1, 2, 3, 4>>}
   """
-  @spec block_get(t, String.t) :: response(binary)
+  @spec block_get(t, String.t) :: {:ok, binary} | {:error, any}
   def block_get(client \\ %__MODULE__{}, key) do
     request(client, "block/get/#{key}")
   end
 
   @doc ~S"""
-  Fetch an IPFS object.
+  Gets an IPFS object.
+
+  ## Example
+
+      iex> IPFS.Client.object_get("QmdoDatULjkor1eA1YhBAjmKkkD")
+      {:ok, %IPFS.Client.Object{data: <<39, 42, 19, 1>>,
+                                links: [%IPFS.Client.Link{hash: "QmaSf39sCs",
+                                                          name: "index.html",
+                                                          size: 262158}]}}
   """
-  @spec object_get(t, String.t) :: response(IPFS.Client.Object.t)
+  @spec object_get(t, String.t) :: {:ok, IPFS.Client.Object.t} | {:error, any}
   def object_get(client \\ %__MODULE__{}, key) do
     client
     |> request("object/get/#{key}")
@@ -83,9 +129,20 @@ defmodule IPFS.Client do
   end
 
   @doc ~S"""
-  Retrieve information about an IPFS object.
+  Gets information about an IPFS object (DAG node).
+
+  ## Example
+
+      iex> IPFS.Client.object_stat("QmdoDatULjkor1eA1YhBAjmKkkD")
+      {:ok, %IPFS.Client.ObjectStat{block_size: 777,
+                                    cumulative_size: 394284,
+                                    data_size: 71,
+                                    links_size: 706,
+                                    num_links: 16,
+                                    hash: "QmdoDatULjkor1eA1YhBAjmKkkD"}}
   """
-  @spec object_stat(t, String.t) :: response(IPFS.Client.ObjectStat.t)
+  @spec (object_stat(t, String.t) ::
+         {:ok, IPFS.Client.ObjectStat.t} | {:error, any})
   def object_stat(client \\ %__MODULE__{}, key) do
     client
     |> request("object/stat/#{key}")
@@ -93,9 +150,21 @@ defmodule IPFS.Client do
   end
 
   @doc ~S"""
-  Retrieve the node's local identity information.
+  Gets the node's local identity information.
+
+  ## Example
+
+      iex> IPFS.Client.local_id
+      {:ok, %IPFS.Client.ID{
+              id: "QmNRCEwFMgCcbjNk5bFud",
+              public_key: "CAASpVCHJYVmkqSAQ",
+              addresses: [
+                "/ip6/::1/tcp/4001/QmNRCEwFMgCcbjNk5bFud",
+                "/ip4/127.0.0.1/tcp/4001/ipfs/QmNRCEwFMgCcbjNk5bFud"],
+              agent_version: "go-ipfs/0.3.11-dev",
+              protocol_version: "ipfs/0.1.0"}}
   """
-  @spec local_id(t) :: response(IPFS.Client.ID.t)
+  @spec local_id(t) :: {:ok, IPFS.Client.ID.t} | {:error, any}
   def local_id(client \\ %__MODULE__{}) do
     client
     |> request("id")
@@ -103,9 +172,21 @@ defmodule IPFS.Client do
   end
 
   @doc ~S"""
-  Retrieve the identify information of a connected node.
+  Gets the identify information of a connected node.
+
+  ## Example
+
+      iex> IPFS.Client.id("QmNRCEwFMgCcbjNk5bFud")
+      {:ok, %IPFS.Client.ID{
+              id: "QmNRCEwFMgCcbjNk5bFud",
+              public_key: "CAASpVCHJYVmkqSAQ",
+              addresses: [
+                "/ip6/::1/tcp/4001/QmNRCEwFMgCcbjNk5bFud",
+                "/ip4/127.0.0.1/tcp/4001/ipfs/QmNRCEwFMgCcbjNk5bFud"],
+              agent_version: "go-ipfs/0.3.11-dev",
+              protocol_version: "ipfs/0.1.0"}}
   """
-  @spec id(t, String.t) :: response(IPFS.Client.ID.t)
+  @spec id(t, String.t) :: {:ok, IPFS.Client.ID.t} | {:error, any}
   def id(client \\ %__MODULE__{}, peer_id) do
     client
     |> request("id/#{peer_id}")
@@ -113,9 +194,16 @@ defmodule IPFS.Client do
   end
 
   @doc ~S"""
-  Retrieve the list of bootstrap peers.
+  Gets the list of bootstrap peers.
+
+  ## Example
+
+      iex> IPFS.Client.bootstrap_list
+      {:ok, ["/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeY",
+             "/ip4/104.236.176.52/tcp/4001/ipfs/QmSoLnSGccFuZQJz",
+             "/ip4/104.236.179.241/tcp/4001/ipfs/QmSoLPppuBtQSGw"]}
   """
-  @spec bootstrap_list(t) :: response([String.t])
+  @spec bootstrap_list(t) :: {:ok, [String.t]} | {:error, any}
   def bootstrap_list(client \\ %__MODULE__{}) do
     case client |> request("bootstrap/list") |> decode do
       {:ok, map} -> {:ok, Map.get(map, "Peers")}
@@ -123,7 +211,7 @@ defmodule IPFS.Client do
     end
   end
 
-  @spec request(t, String.t) :: response(binary)
+  @spec request(t, String.t) :: {:ok, binary} | {:error, any}
   defp request(client, path) do
     url = make_url(client, path)
     case HTTPoison.get!(url) do
@@ -132,7 +220,7 @@ defmodule IPFS.Client do
     end
   end
 
-  @spec decode({:ok, binary} | {:error, any}) :: response(%{})
+  @spec decode({:ok, binary} | {:error, any}) :: {:ok, %{}} | {:error, any}
   defp decode({:ok, json}) do
     Poison.decode(json)
   end
@@ -153,6 +241,7 @@ defmodule IPFS.Client.Version do
 
   @type t :: %__MODULE__{version: String.t, commit: String.t}
 
+  @doc false
   @spec decode({:ok, binary} | {:error, any}) :: {:ok, t} | {:error, any}
   def decode({:ok, json}) do
     case Poison.decode(json) do
@@ -176,6 +265,7 @@ defmodule IPFS.Client.Link do
                                hash: String.t,
                                size: non_neg_integer}
 
+  @doc false
   @spec encode(t) :: binary
   def encode(%__MODULE__{name: name, hash: hash, size: size}) do
     Poison.encode!(%{"Name": name,
@@ -192,6 +282,7 @@ defmodule IPFS.Client.Object do
 
   @type t :: %IPFS.Client.Object{links: [IPFS.Client.Link.t], data: binary}
 
+  @doc false
   @spec decode({:ok, binary} | {:error, any}) :: {:ok, t} | {:error, any}
   def decode({:ok, json}) do
     case Poison.decode(json) do
@@ -207,6 +298,7 @@ defmodule IPFS.Client.Object do
 
   def decode(other), do: other
 
+  @doc false
   @spec encode(t) :: binary
   def encode(%__MODULE__{data: data, links: links}) do
     links = Enum.map(links, &IPFS.Client.Link.encode/1)
@@ -230,6 +322,7 @@ defmodule IPFS.Client.ObjectStat do
     data_size: non_neg_integer,
     cumulative_size: non_neg_integer}
 
+  @doc false
   @spec decode({:ok, binary} | {:error, any}) :: {:ok, t} | {:error, any}
   def decode({:ok, json}) do
     case Poison.decode(json) do
@@ -262,6 +355,7 @@ defmodule IPFS.Client.ID do
     agent_version: String.t,
     protocol_version: String.t}
 
+  @doc false
   @spec decode({:ok, binary} | {:error, any}) :: {:ok, t} | {:error, any}
   def decode({:ok, json}) do
     case Poison.decode(json) do

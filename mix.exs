@@ -7,7 +7,8 @@ defmodule IpfsClient.Mixfile do
      elixir: "~> 1.1",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps]
+     deps: deps,
+     dialyzer: [plt_add_apps: [:httpoison, :poison]]]
   end
 
   # Configuration for the OTP application

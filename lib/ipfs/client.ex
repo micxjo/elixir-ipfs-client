@@ -76,6 +76,14 @@ defmodule IPFS.Client do
     |> IPFS.Client.ID.decode
   end
 
+  @spec bootstrap_list(t) :: [String.t]
+  def bootstrap_list(client \\ %__MODULE__{}) do
+    client
+    |> request("bootstrap/list")
+    |> Poison.decode!
+    |> Map.get("Peers")
+  end
+
   @spec request(t, String.t) :: binary
   defp request(client, path) do
     url = make_url(client, path)

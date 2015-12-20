@@ -175,4 +175,19 @@ defmodule ClientTest do
         protocol_version: "ipfs/0.1.0"}
     end
   end
+
+  test "Test bootstrap_list request" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/bootstrap/list") ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"Peers":["/ip4/127.0.0.1/tcp/4001/ipfs/abc",
+                               "/ip6/::1/udp/4001"]}
+                               """} end] do
+      assert IPFS.Client.bootstrap_list == [
+        "/ip4/127.0.0.1/tcp/4001/ipfs/abc",
+        "/ip6/::1/udp/4001"]
+    end
+  end
 end

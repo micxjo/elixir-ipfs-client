@@ -68,6 +68,24 @@ defmodule ClientTest do
     end
   end
 
+  test "Test swarm_addrs_local request" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/swarm/addrs/local") ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"Strings":
+                               [
+                               "/ip4/127.0.0.1/tcp/4001",
+                               "/ip6/::1/tcp/4201"
+                               ]}
+                               """} end] do
+      assert IPFS.Client.swarm_addrs_local == [
+        "/ip4/127.0.0.1/tcp/4001",
+        "/ip6/::1/tcp/4201"]
+    end
+  end
+
   test "Test object_get request" do
     with_mock HTTPoison, [get!: fn(
                            "http://localhost:5001/api/v0/object/get/a_key") ->

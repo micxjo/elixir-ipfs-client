@@ -43,6 +43,14 @@ defmodule IPFS.Client do
     |> Map.get("Addrs")
   end
 
+  @spec swarm_addrs_local(t) :: [String.t]
+  def swarm_addrs_local(client \\ %__MODULE__{}) do
+    client
+    |> request("swarm/addrs/local")
+    |> Poison.decode!
+    |> Map.get("Strings")
+  end
+
   @spec block_get(t, String.t) :: binary
   def block_get(client \\ %__MODULE__{}, key) do
     request(client, "block/get/#{key}")

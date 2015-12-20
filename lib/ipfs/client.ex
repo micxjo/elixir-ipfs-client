@@ -57,6 +57,20 @@ defmodule IPFS.Client do
     |> IPFS.Client.ObjectStat.decode
   end
 
+  @spec local_id(t) :: IPFS.Client.ID.t
+  def local_id(client \\ %__MODULE__{}) do
+    client
+    |> request("id")
+    |> IPFS.Client.ID.decode
+  end
+
+  @spec id(t, String.t) :: IPFS.Client.ID.t
+  def id(client \\ %__MODULE__{}, peer_id) do
+    client
+    |> request("id/#{peer_id}")
+    |> IPFS.Client.ID.decode
+  end
+
   @spec request(t, String.t) :: binary
   defp request(client, path) do
     url = make_url(client, path)
@@ -94,6 +108,13 @@ defmodule IPFS.Client.Link do
   @type t :: %IPFS.Client.Link{name: String.t,
                                hash: String.t,
                                size: non_neg_integer}
+
+  @spec encode(t) :: binary
+  def encode(%__MODULE__{name: name, hash: hash, size: size}) do
+    Poison.encode!(%{"Name": name,
+                     "Hash": hash,
+                     "Size": size})
+  end
 end
 
 defmodule IPFS.Client.Object do
@@ -112,6 +133,13 @@ defmodule IPFS.Client.Object do
                                           hash: l["Hash"],
                                           size: l["Size"]} end)
     %IPFS.Client.Object{data: map["Data"], links: links}
+  end
+
+  @spec encode(t) :: binary
+  def encode(%__MODULE__{data: data, links: links}) do
+    links = Enum.map(links, &IPFS.Client.Link.encode/1)
+    Poison.encode!(%{"Data" => data,
+                     "Links" => links})
   end
 end
 
@@ -140,5 +168,31 @@ defmodule IPFS.Client.ObjectStat do
       links_size: map["LinksSize"],
       data_size: map["DataSize"],
       cumulative_size: map["CumulativeSize"]}
+  end
+end
+
+defmodule IPFS.Client.ID do
+  @moduledoc """
+  Information about an IPFS peer.
+  """
+  defstruct [id: "", public_key: "", addresses: [], agent_version: "",
+             protocol_version: ""]
+
+  @type t :: %IPFS.Client.ID{
+    id: String.t,
+    public_key: String.t,
+    addresses: [String.t],
+    agent_version: String.t,
+    protocol_version: String.t}
+
+  @spec decode(binary) :: t
+  def decode(json) do
+    map = Poison.decode!(json)
+    %IPFS.Client.ID{
+      id: map["ID"],
+      public_key: map["PublicKey"],
+      addresses: map["Addresses"],
+      agent_version: map["AgentVersion"],
+      protocol_version: map["ProtocolVersion"]}
   end
 end

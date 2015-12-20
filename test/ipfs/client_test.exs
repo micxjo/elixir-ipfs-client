@@ -114,4 +114,54 @@ defmodule ClientTest do
       assert IPFS.Client.block_get("a_key") == <<42, 43, 44>>
     end
   end
+
+  test "Test local_id request" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/id") ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"ID": "a_peer_id",
+                               "PublicKey": "CAAPubKey0123",
+                               "Addresses": [
+                               "/ip4/127.0.0.1/tcp/4001/ipfs/a_peer_id",
+                               "/ip6/::1/tcp/4001/ipfs/a_peer_id"],
+                               "AgentVersion": "go-ipfs/0.3.11-dev",
+                               "ProtocolVersion": "ipfs/0.1.0"}
+                               """} end] do
+      assert IPFS.Client.local_id == %IPFS.Client.ID{
+        id: "a_peer_id",
+        public_key: "CAAPubKey0123",
+        addresses: [
+          "/ip4/127.0.0.1/tcp/4001/ipfs/a_peer_id",
+          "/ip6/::1/tcp/4001/ipfs/a_peer_id"],
+        agent_version: "go-ipfs/0.3.11-dev",
+        protocol_version: "ipfs/0.1.0"}
+    end
+  end
+
+  test "Test id request" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/id/a_peer_id") ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"ID": "a_peer_id",
+                               "PublicKey": "CAAPubKey0123",
+                               "Addresses": [
+                               "/ip4/127.0.0.1/tcp/4001/ipfs/a_peer_id",
+                               "/ip6/::1/tcp/4001/ipfs/a_peer_id"],
+                               "AgentVersion": "go-ipfs/0.3.11-dev",
+                               "ProtocolVersion": "ipfs/0.1.0"}
+                               """} end] do
+      assert IPFS.Client.id("a_peer_id") == %IPFS.Client.ID{
+        id: "a_peer_id",
+        public_key: "CAAPubKey0123",
+        addresses: [
+          "/ip4/127.0.0.1/tcp/4001/ipfs/a_peer_id",
+          "/ip6/::1/tcp/4001/ipfs/a_peer_id"],
+        agent_version: "go-ipfs/0.3.11-dev",
+        protocol_version: "ipfs/0.1.0"}
+    end
+  end
 end

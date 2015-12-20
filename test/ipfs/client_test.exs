@@ -2,10 +2,6 @@ defmodule ClientTest do
   use ExUnit.Case, async: true
   import Mock
 
-  defp make_url(path) do
-    "http://localhost:5001/api/v0/#{path}"
-  end
-
   test "Test version request" do
     with_mock HTTPoison, [get!: fn("http://localhost:5001/api/v0/version") ->
                            %HTTPoison.Response{

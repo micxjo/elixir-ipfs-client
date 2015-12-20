@@ -7,6 +7,11 @@ defmodule IPFS.Client do
   @type port_number :: 0..65535
   @type t :: %__MODULE__{host: String.t, port: port_number}
 
+  @spec new(String.t, port_number) :: t
+  def new(host, port) do
+    %__MODULE__{host: host, port: port}
+  end
+
   @doc ~S"""
   Request the IPFS server's version.
 

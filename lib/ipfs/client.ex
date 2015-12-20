@@ -123,7 +123,7 @@ defmodule IPFS.Client do
     end
   end
 
-  @spec request(t, String.t) :: binary
+  @spec request(t, String.t) :: response(binary)
   defp request(client, path) do
     url = make_url(client, path)
     case HTTPoison.get!(url) do
@@ -159,7 +159,7 @@ defmodule IPFS.Client.Version do
       {:ok, %{"Version" => version, "Commit" => commit}} ->
         {:ok, %__MODULE__{version: version, commit: commit}}
       {:error, err} -> {:error, err}
-      other -> {:error, :missing_fields}
+      _other -> {:error, :missing_fields}
     end
   end
 

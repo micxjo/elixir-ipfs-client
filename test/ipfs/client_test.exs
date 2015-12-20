@@ -3,13 +3,14 @@ defmodule ClientTest do
   import Mock
 
   test "Uses custom host and port" do
-    with_mock HTTPoison, [get!: fn("http://example.com:6001/api/v0/version") ->
-                           %HTTPoison.Response{
-                             status_code: 200,
-                             body: """
-                             {"Version": "an_awesome_version",
-                             "Commit": "commit_1"}
-                             """} end] do
+    with_mock HTTPoison, [get!: fn(
+                           "http://example.com:6001/api/v0/version", _) ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"Version": "an_awesome_version",
+                               "Commit": "commit_1"}
+                               """} end] do
       client = IPFS.Client.new("example.com", 6001)
       assert IPFS.Client.version(client) == {
         :ok, %IPFS.Client.Version{
@@ -18,14 +19,44 @@ defmodule ClientTest do
     end
   end
 
+  test "Default user agent is set" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/version",
+                           [{"User-agent", _}]) ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"Version": "an_awesome_version",
+                               "Commit": "commit_1"}
+                               """} end] do
+      assert {:ok, _} = IPFS.Client.version
+    end
+  end
+
+  test "Custom user agent si set" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/version",
+                           [{"User-agent", "custom_agent"}]) ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"Version": "an_awesome_version",
+                               "Commit": "commit_1"}
+                               """} end] do
+      client = %IPFS.Client{user_agent: "custom_agent"}
+      assert {:ok, _} = IPFS.Client.version(client)
+    end
+  end
+
   test "Test version request" do
-    with_mock HTTPoison, [get!: fn("http://localhost:5001/api/v0/version") ->
-                           %HTTPoison.Response{
-                             status_code: 200,
-                             body: """
-                             {"Version": "an_awesome_version",
-                             "Commit": "commit_1"}
-                             """} end] do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/version", _) ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"Version": "an_awesome_version",
+                               "Commit": "commit_1"}
+                               """} end] do
       assert IPFS.Client.version == {
         :ok, %IPFS.Client.Version{
         version: "an_awesome_version",
@@ -35,7 +66,7 @@ defmodule ClientTest do
 
   test "Test swarm_peers request" do
     with_mock HTTPoison, [get!: fn(
-                           "http://localhost:5001/api/v0/swarm/peers") ->
+                           "http://localhost:5001/api/v0/swarm/peers", _) ->
                              %HTTPoison.Response{
                                status_code: 200,
                                body: """
@@ -50,7 +81,7 @@ defmodule ClientTest do
 
   test "Test swarm_addrs request" do
     with_mock HTTPoison, [get!: fn(
-                           "http://localhost:5001/api/v0/swarm/addrs") ->
+                           "http://localhost:5001/api/v0/swarm/addrs", _) ->
                              %HTTPoison.Response{
                                status_code: 200,
                                body: """
@@ -73,7 +104,8 @@ defmodule ClientTest do
 
   test "Test swarm_addrs_local request" do
     with_mock HTTPoison, [get!: fn(
-                           "http://localhost:5001/api/v0/swarm/addrs/local") ->
+                           "http://localhost:5001/api/v0/swarm/addrs/local",
+                           _) ->
                              %HTTPoison.Response{
                                status_code: 200,
                                body: """
@@ -91,7 +123,8 @@ defmodule ClientTest do
 
   test "Test object_get request" do
     with_mock HTTPoison, [get!: fn(
-                           "http://localhost:5001/api/v0/object/get/a_key") ->
+                           "http://localhost:5001/api/v0/object/get/a_key",
+                           _) ->
                              %HTTPoison.Response{
                                status_code: 200,
                                body: """
@@ -117,7 +150,8 @@ defmodule ClientTest do
 
   test "Test object_stat request" do
     with_mock HTTPoison, [get!: fn(
-                           "http://localhost:5001/api/v0/object/stat/a_key") ->
+                           "http://localhost:5001/api/v0/object/stat/a_key",
+                           _) ->
                              %HTTPoison.Response{
                                status_code: 200,
                                body: """
@@ -141,7 +175,8 @@ defmodule ClientTest do
 
   test "Test block_get request" do
     with_mock HTTPoison, [get!: fn(
-                           "http://localhost:5001/api/v0/block/get/a_key") ->
+                           "http://localhost:5001/api/v0/block/get/a_key",
+                           _) ->
                              %HTTPoison.Response{
                                status_code: 200,
                                body: <<42, 43, 44>>} end] do
@@ -151,7 +186,7 @@ defmodule ClientTest do
 
   test "Test local_id request" do
     with_mock HTTPoison, [get!: fn(
-                           "http://localhost:5001/api/v0/id") ->
+                           "http://localhost:5001/api/v0/id", _) ->
                              %HTTPoison.Response{
                                status_code: 200,
                                body: """
@@ -177,7 +212,7 @@ defmodule ClientTest do
 
   test "Test id request" do
     with_mock HTTPoison, [get!: fn(
-                           "http://localhost:5001/api/v0/id/a_peer_id") ->
+                           "http://localhost:5001/api/v0/id/a_peer_id", _) ->
                              %HTTPoison.Response{
                                status_code: 200,
                                body: """
@@ -203,7 +238,7 @@ defmodule ClientTest do
 
   test "Test bootstrap_list request" do
     with_mock HTTPoison, [get!: fn(
-                           "http://localhost:5001/api/v0/bootstrap/list") ->
+                           "http://localhost:5001/api/v0/bootstrap/list", _) ->
                              %HTTPoison.Response{
                                status_code: 200,
                                body: """
@@ -218,7 +253,7 @@ defmodule ClientTest do
 
   test "JSON parse failure" do
     with_mock HTTPoison, [get!: fn(
-                           "http://localhost:5001/api/v0/version") ->
+                           "http://localhost:5001/api/v0/version", _) ->
                              %HTTPoison.Response{
                                status_code: 200,
                                body: "qwerty123"} end] do
@@ -228,7 +263,7 @@ defmodule ClientTest do
 
   test "HTTP error" do
     with_mock HTTPoison, [get!: fn(
-                            "http://localhost:5001/api/v0/version") ->
+                            "http://localhost:5001/api/v0/version", _) ->
                               %HTTPoison.Response{
                                 status_code: 404,
                                 body: "404 Not Found"} end] do

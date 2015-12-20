@@ -1,19 +1,22 @@
 defmodule IPFS.Client do
   @moduledoc """
-  A client library for interacting with an IPFS daemon.
+  A client library for interacting with an IPFS node via its HTTP API.
   """
   defstruct host: "localhost", port: 5001
 
   @type port_number :: 0..65535
   @type t :: %__MODULE__{host: String.t, port: port_number}
 
+  @doc ~S"""
+  Create a new client pointing at the provided host and port.
+  """
   @spec new(String.t, port_number) :: t
   def new(host, port) do
     %__MODULE__{host: host, port: port}
   end
 
   @doc ~S"""
-  Request the IPFS server's version.
+  Get version details from the IPFS node.
 
   ## Examples
 
@@ -27,6 +30,9 @@ defmodule IPFS.Client do
     |> IPFS.Client.Version.decode
   end
 
+  @doc ~S"""
+  Get a list of the set of peers the node is connected to.
+  """
   @spec swarm_peers(t) :: [String.t]
   def swarm_peers(client \\ %__MODULE__{}) do
     client
@@ -35,6 +41,9 @@ defmodule IPFS.Client do
     |> Map.get("Strings")
   end
 
+  @doc ~S"""
+  Get a list of known addresses.
+  """
   @spec swarm_addrs(t) :: %{String.t => [String.t]}
   def swarm_addrs(client \\ %__MODULE__{}) do
     client
@@ -43,6 +52,9 @@ defmodule IPFS.Client do
     |> Map.get("Addrs")
   end
 
+  @doc ~S"""
+  Get a list of the node's local addresses.
+  """
   @spec swarm_addrs_local(t) :: [String.t]
   def swarm_addrs_local(client \\ %__MODULE__{}) do
     client
@@ -51,11 +63,17 @@ defmodule IPFS.Client do
     |> Map.get("Strings")
   end
 
+  @doc ~S"""
+  Fetch a raw IPFS block.
+  """
   @spec block_get(t, String.t) :: binary
   def block_get(client \\ %__MODULE__{}, key) do
     request(client, "block/get/#{key}")
   end
 
+  @doc ~S"""
+  Fetch an IPFS object.
+  """
   @spec object_get(t, String.t) :: IPFS.Client.Object.t
   def object_get(client \\ %__MODULE__{}, key) do
     client
@@ -63,6 +81,9 @@ defmodule IPFS.Client do
     |> IPFS.Client.Object.decode
   end
 
+  @doc ~S"""
+  Retrieve information about an IPFS object.
+  """
   @spec object_stat(t, String.t) :: IPFS.Client.ObjectStat.t
   def object_stat(client \\ %__MODULE__{}, key) do
     client
@@ -70,6 +91,9 @@ defmodule IPFS.Client do
     |> IPFS.Client.ObjectStat.decode
   end
 
+  @doc ~S"""
+  Retrieve the node's local identity information.
+  """
   @spec local_id(t) :: IPFS.Client.ID.t
   def local_id(client \\ %__MODULE__{}) do
     client
@@ -77,6 +101,9 @@ defmodule IPFS.Client do
     |> IPFS.Client.ID.decode
   end
 
+  @doc ~S"""
+  Retrieve the identify information of a connected node.
+  """
   @spec id(t, String.t) :: IPFS.Client.ID.t
   def id(client \\ %__MODULE__{}, peer_id) do
     client
@@ -84,6 +111,9 @@ defmodule IPFS.Client do
     |> IPFS.Client.ID.decode
   end
 
+  @doc ~S"""
+  Retrieve the list of bootstrap peers.
+  """
   @spec bootstrap_list(t) :: [String.t]
   def bootstrap_list(client \\ %__MODULE__{}) do
     client
@@ -107,7 +137,7 @@ end
 
 defmodule IPFS.Client.Version do
   @moduledoc """
-  A representation of an IPFS server version.
+  Version information of an IPFS node.
   """
   defstruct version: "0.0", commit: "0"
 
@@ -122,7 +152,7 @@ end
 
 defmodule IPFS.Client.Link do
   @moduledoc """
-  Represents a link to an IPFS object.
+  A link to an IPFS object.
   """
   defstruct name: "", hash: "", size: 0
 
@@ -140,7 +170,7 @@ end
 
 defmodule IPFS.Client.Object do
   @moduledoc """
-  Represents an IPFS object.
+  An IPFS object.
   """
   defstruct links: [], data: <<>>
 
@@ -194,7 +224,7 @@ end
 
 defmodule IPFS.Client.ID do
   @moduledoc """
-  Information about an IPFS peer.
+  Identity information about an IPFS peer.
   """
   defstruct [id: "", public_key: "", addresses: [], agent_version: "",
              protocol_version: ""]

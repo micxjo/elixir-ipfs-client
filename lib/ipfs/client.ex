@@ -2,13 +2,17 @@ defmodule IPFS.Client do
   @moduledoc """
   A client library for interacting with an IPFS node via its HTTP API.
   """
-  defstruct host: "localhost", port: 5001
+  defstruct [host: "localhost", port: 5001,
+             user_agent: @user_agent]
+
+  @user_agent "/elixir-ipfs-client/0.0.1/"
 
   @typedoc "A TCP port"
   @type port_number :: 0..65535
 
   @typedoc "A connection to an IPFS node"
-  @type t :: %__MODULE__{host: String.t, port: port_number}
+  @type t :: %__MODULE__{host: String.t, port: port_number,
+                         user_agent: String.t}
 
   @doc ~S"""
   Creates a new client pointing at the provided host and port.
@@ -44,9 +48,9 @@ defmodule IPFS.Client do
   ## Example
 
       iex> IPFS.Client.swarm_peers
-      {:ok, ["/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
-            "/ip4/104.236.176.52/tcp/4001/ipfs/QmSoLnSGccFuZQJzRadHn95W2CrSFmZuTdDWP8HXaHca9z",
-            "/ip4/104.236.151.122/tcp/4001/ipfs/QmSoLju6m7xTh3DuokvT3886QRYqxAzb1kShaanJgW36yx"]}
+      {:ok, ["/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQ",
+            "/ip4/104.236.176.52/tcp/4001/ipfs/QmSoLnSGccFuZQJzRadHn95W",
+            "/ip4/104.236.151.122/tcp/4001/ipfs/QmSoLju6m7xTh3DuokvT388"]}
   """
   @spec swarm_peers(t) :: {:ok, [String.t]} | {:error, any}
   def swarm_peers(client \\ %__MODULE__{}) do
@@ -214,7 +218,8 @@ defmodule IPFS.Client do
   @spec request(t, String.t) :: {:ok, binary} | {:error, any}
   defp request(client, path) do
     url = make_url(client, path)
-    case HTTPoison.get!(url) do
+    ua = Map.get(client, :user_agent, @user_agent)
+    case HTTPoison.get!(url, [{"User-agent", ua}]) do
       %{status_code: 200, body: body} -> {:ok, body}
       other -> {:error, other}
     end

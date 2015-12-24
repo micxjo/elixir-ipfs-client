@@ -2,10 +2,10 @@ defmodule IPFS.Client do
   @moduledoc """
   A client library for interacting with an IPFS node via its HTTP API.
   """
+  @user_agent "/elixir-ipfs-client/0.0.1/"
+
   defstruct [host: "localhost", port: 5001,
              user_agent: @user_agent]
-
-  @user_agent "/elixir-ipfs-client/0.0.1/"
 
   @typedoc "A TCP port"
   @type port_number :: 0..65535
@@ -89,8 +89,8 @@ defmodule IPFS.Client do
   ## Example
 
       iex> IPFS.Client.swarm_addrs_local
-      {:ok, ["/ip4/127.0.0.1/tcp/4001", 
-             "/ip4/192.168.1.2/tcp/4001", 
+      {:ok, ["/ip4/127.0.0.1/tcp/4001",
+             "/ip4/192.168.1.2/tcp/4001",
              "/ip6/::1/tcp/4001"]
   """
   @spec swarm_addrs_local(t) :: {:ok, [String.t]} | {:error, any}
@@ -211,6 +211,31 @@ defmodule IPFS.Client do
   def bootstrap_list(client \\ %__MODULE__{}) do
     case client |> request("bootstrap/list") |> decode do
       {:ok, map} -> {:ok, Map.get(map, "Peers")}
+      other -> other
+    end
+  end
+
+  @doc ~S"""
+  Gets a list of the objects pinned to local storage.
+
+  ## Example
+
+      iex> IPFS.Client.pin_ls
+      {:ok, [%IPFS.Client.Pin{hash: "QmPZ9gcCEpqKTo6aq61g2nXGUhM4i",
+                              count: 1,
+                              type: "recursive"},
+             %IPFS.Client.Pin{hash: "QmTumTjvcYCAvRRwQ8sDRxh8ezmrc",
+                              count: 3,
+                              type: "direct"}]}
+  """
+  @spec pin_ls(t) :: {:ok, [IPFS.Client.Pin.t]} | {:error, any}
+  def pin_ls(client \\ %__MODULE__{}) do
+    case client |> request("pin/ls") |> decode do
+      {:ok, map} ->
+        {:ok,
+         map
+         |> Map.get("Keys")
+         |> Enum.map(&IPFS.Client.Pin.decode/1)}
       other -> other
     end
   end
@@ -376,4 +401,24 @@ defmodule IPFS.Client.ID do
   end
 
   def decode(other), do: other
+end
+
+defmodule IPFS.Client.Pin do
+  @moduledoc """
+  Information about an object pinned to local storage.
+  """
+  defstruct [hash: "", type: "recursive", count: 1]
+
+  @type t :: %IPFS.Client.Pin{
+    hash: String.t,
+    type: String.t,
+    count: non_neg_integer}
+
+  @doc false
+  @spec decode({String.t, %{}}) :: t
+  def decode({k, v}) do
+    %__MODULE__{hash: k,
+                type: Map.get(v, "Type"),
+                count: Map.get(v, "Count")}
+  end
 end

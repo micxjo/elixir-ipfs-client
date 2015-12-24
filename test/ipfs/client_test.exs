@@ -251,6 +251,22 @@ defmodule ClientTest do
     end
   end
 
+  test "Test pin_ls request" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/pin/ls", _) ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"Keys": {
+                               "hash_1": {"Type": "recursive", "Count": 1},
+                               "hash_2": {"Type": "direct", "Count": 3}}}
+                               """} end] do
+      assert IPFS.Client.pin_ls == {
+        :ok, [%IPFS.Client.Pin{hash: "hash_1", count: 1, type: "recursive"},
+              %IPFS.Client.Pin{hash: "hash_2", count: 3, type: "direct"}]}
+    end
+  end
+
   test "JSON parse failure" do
     with_mock HTTPoison, [get!: fn(
                            "http://localhost:5001/api/v0/version", _) ->

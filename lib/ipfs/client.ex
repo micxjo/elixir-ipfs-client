@@ -120,7 +120,7 @@ defmodule IPFS.Client do
   ## Example
 
       iex> IPFS.Client.object_get("QmdoDatULjkor1eA1YhBAjmKkkD")
-      {:ok, %IPFS.Client.Object{data: <<39, 42, 19, 1>>,
+      {:ok, %IPFS.Client.Object{hash: "QmdoDatULjkor1eA1YhBAjmKkkD",
                                 links: [%IPFS.Client.Link{hash: "QmaSf39sCs",
                                                           name: "index.html",
                                                           size: 262158}]}}
@@ -130,6 +130,58 @@ defmodule IPFS.Client do
     client
     |> request("object/get/#{key}")
     |> IPFS.Client.Object.decode
+  end
+
+  @doc ~S"""
+  Creates a new object.
+
+  # TODO: Add template
+
+  ## Example
+
+      iex> IPFS.Client.object_new()
+      {:ok, %IPFS.Client.PatchObject{hash: "QmUvYWLEr3pM8xGFLdEfmGhpHz6VTAkh8Aom3ucC62uGsK"
+                                links: []}}
+  """
+  @spec object_new(t) :: {:ok, IPFS.Client.Object.t} | {:error, any}
+  def object_new(client \\ %__MODULE__{}) do
+    client
+    |> request("object/new")
+    |> IPFS.Client.PatchObject.decode
+  end
+
+  @doc ~S"""
+  Puts a new object.
+
+  ## Example
+
+      iex> IPFS.Client.object_put("test data", false)
+      {:ok, %IPFS.Client.PatchObject{hash: "QmUvYWLEr3pM8xGFLdEfmGhpHz6VTAkh8Aom3ucC62uGsK",
+                                links: []}}
+  """
+  @spec object_put(t, String.t) :: {:ok, IPFS.Client.Object.t} | {:error, any}
+  def object_put(client \\ %__MODULE__{}, data, pin) do
+    client
+    |> request_post("object/put", [data: %{"Data" => data |> Base.encode64} |> Poison.encode!], [datafieldenc: "base64", pin: pin |> to_string])
+    |> IPFS.Client.PatchObject.decode
+  end
+
+  @doc ~S"""
+  Patches an object with a new link.
+
+  ## Example
+
+      iex> IPFS.Client.object_patch_add_link("QmaSf39sCs", "/names/1", "QmdoDatULjkor1eA1YhBAjmKkkD", true)
+      {:ok, %IPFS.Client.PatchObject{hash: <<39, 42, 19, 1>>,
+                                links: [%IPFS.Client.Link{hash: "QmdoDatULjkor1eA1YhBAjmKkkD",
+                                                          name: "/names/1",
+                                                          size: 10}]}}
+  """
+  @spec object_patch_add_link(t, binary(), String.t, boolean()) :: {:ok, IPFS.Client.Object.t} | {:error, any}
+  def object_patch_add_link(client \\ %__MODULE__{}, hash, link_name, link_hash, create_intermediary) do
+    client
+    |> request("object/patch/add-link", [hash, link_name, link_hash], create: create_intermediary |> to_string)
+    |> IPFS.Client.PatchObject.decode
   end
 
   @doc ~S"""
@@ -240,11 +292,25 @@ defmodule IPFS.Client do
     end
   end
 
-  @spec request(t, String.t) :: {:ok, binary} | {:error, any}
-  defp request(client, path) do
+  @spec request(t, String.t, [String.t], keyword()) :: {:ok, binary} | {:error, any}
+  defp request(client, path, args \\ [], params \\ []) do
     url = make_url(client, path)
     ua = Map.get(client, :user_agent, @user_agent)
-    case HTTPoison.get!(url, [{"User-agent", ua}]) do
+    arg_params = for arg <- args, do: {"arg", arg}
+    case HTTPoison.get!(url, [{"User-agent", ua}], params: arg_params ++ params) do
+      %{status_code: 200, body: body} -> {:ok, body}
+      other -> {:error, other}
+    end
+  end
+
+  @spec request_post(t, String.t, keyword(), keyword()) :: {:ok, binary} | {:error, any}
+  defp request_post(client, path, form_data, params \\ []) do
+    url = make_url(client, path)
+    ua = Map.get(client, :user_agent, @user_agent)
+    form = for {k, v} <- form_data do
+      {k |> to_string, v}
+    end
+    case HTTPoison.post!(url, {:multipart, form}, [{"User-agent", ua}], params: params) do
       %{status_code: 200, body: body} -> {:ok, body}
       other -> {:error, other}
     end
@@ -333,6 +399,39 @@ defmodule IPFS.Client.Object do
   def encode(%__MODULE__{data: data, links: links}) do
     links = Enum.map(links, &IPFS.Client.Link.encode/1)
     Poison.encode!(%{"Data" => data,
+                     "Links" => links})
+  end
+end
+
+defmodule IPFS.Client.PatchObject do
+  @moduledoc """
+  An IPFS new object.
+  """
+  defstruct hash: <<>>, links: []
+
+  @type t :: %IPFS.Client.PatchObject{hash: binary, links: [IPFS.Client.Link.t]}
+
+  @doc false
+  @spec decode({:ok, binary} | {:error, any}) :: {:ok, t} | {:error, any}
+  def decode({:ok, json}) do
+    case Poison.decode(json) do
+      {:ok, map} ->
+        links = (map["Links"] || []) |>
+          Enum.map(fn l -> %IPFS.Client.Link{name: l["Name"],
+                                            hash: l["Hash"],
+                                            size: l["Size"]} end)
+        {:ok, %IPFS.Client.PatchObject{hash: map["Hash"], links: links}}
+      other -> other
+    end
+  end
+
+  def decode(other), do: other
+
+  @doc false
+  @spec encode(t) :: binary
+  def encode(%__MODULE__{hash: hash, links: links}) do
+    links = Enum.map(links, &IPFS.Client.Link.encode/1)
+    Poison.encode!(%{"Hash" => hash,
                      "Links" => links})
   end
 end

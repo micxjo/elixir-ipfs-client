@@ -28,7 +28,7 @@ defmodule IpfsClient.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:httpoison, "~> 0.8.0"},
+    [{:httpoison, "~> 1.0"},
      {:poison, "~> 1.5"},
      {:dogma, "~> 0.0", only: :dev},
      {:earmark, "~> 0.1", only: :dev},

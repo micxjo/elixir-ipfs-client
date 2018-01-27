@@ -133,6 +133,25 @@ defmodule IPFS.Client do
   end
 
   @doc ~S"""
+  Gets an IPFS object encoded as protobuf.
+
+  ## Example
+
+      iex> IPFS.Client.object_get_protobuf("QmdoDatULjkor1eA1YhBAjmKkkD")
+      {:ok, <<18, 48, 10, 34, 18, 32, 66, 250, 4, 91, 202, 123, 233, 191, 30, 73, 233, 44,
+              203, 227, 31, 228, 160, 154, 224, 224, 171, 88, 211, 240, 192, 97, 145, 36,
+              144, 151, 166, 88, 18, 7, 107, 105, 116, 116, 101, 110, 115, 24, 155, 1, 18,
+              47, 10, 34, 18, 32, 8, 209, 87, 57, 117, 200, 175, 129, 190, 191, 5, 128, 11,
+              71, 179, 236, 133, 83, 51, 227, 180, 158, 218, 82, 202, 49, 165, 170, 154, 20,
+              171, 221, 18, 7, 111, 114, 112, 104, 97, 110, 115, 24, 42, 10, 2, 8, 1>>}
+  """
+  @spec object_get_protobuf(t, String.t) :: {:ok, binary()} | {:error, any}
+  def object_get_protobuf(client \\ %__MODULE__{}, key) do
+    client
+    |> request("object/get/#{key}", [], [encoding: "protobuf"])
+  end
+
+  @doc ~S"""
   Creates a new object.
 
   # TODO: Add template

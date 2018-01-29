@@ -311,6 +311,61 @@ defmodule IPFS.Client do
     end
   end
 
+  @doc ~S"""
+  Publishes a hash to IPNS, which is mutable storage.
+
+  ## Example
+
+      iex> IPFS.Client.name_publish(%__MODULE__{}, "QmPZ9gcCEpqKTo6aq61g2nXGUhM4i")
+      {:ok, %IPFS.Client.Published{
+        name: "QmTUESDMNR1Nmf6BzwSFBSRDG6H59PmH1CY4Jx22F3S9TV",
+        value: "/ipfs/QmNgGKjCpUTqnoiTFVERnEhQpv9c2wsbHExMUFxzvRGYca"
+      }}
+  """
+  @type publish_opts :: [resolve: boolean(), lifetime: String.t, ttl: integer(), key: String.t]
+  @spec name_publish(t, binary(), publish_opts) :: {:ok, IPFS.Client.Published.t} | {:error, any()}
+  def name_publish(client \\ %__MODULE__{}, hash, opts \\ []) do
+    request_params = []
+      |> maybe_put_param(opts, :resolve)
+      |> maybe_put_param(opts, :lifetime)
+      |> maybe_put_param(opts, :ttl)
+      |> maybe_put_param(opts, :key)
+
+    request(client, "name/publish", [hash], request_params)
+    |> IPFS.Client.Published.decode()
+  end
+
+  @doc ~S"""
+  Publishes a hash to IPNS, which is mutable storage.
+
+  ## Example
+
+      iex> IPFS.Client.name_resolve(%__MODULE__{}, "QmPZ9gcCEpqKTo6aq61g2nXGUhM4i")
+      {:ok, %IPFS.Client.Published{
+        value: "/ipfs/QmNgGKjCpUTqnoiTFVERnEhQpv9c2wsbHExMUFxzvRGYca"
+      }}
+  """
+  @type resolve_opts :: [recursive: boolean(), nocache: boolean()]
+  @spec name_resolve(t, binary() | nil, resolve_opts) :: {:ok, IPFS.Client.Published.t} | {:error, any()}
+  def name_resolve(client \\ %__MODULE__{}, name \\ nil, opts \\ []) do
+    request_params = []
+      |> maybe_put_param(opts, :recursive)
+      |> maybe_put_param(opts, :nocache)
+    args = if name, do: [name], else: []
+
+    request(client, "name/resolve", args, request_params)
+    |> IPFS.Client.Published.decode()
+  end
+
+  @spec maybe_put_param([], keyword(), atom()) :: []
+  defp maybe_put_param(params, opts, key) do
+    if value = Keyword.get(opts, key) do
+      params ++ [{key |> to_string, value}]
+    else
+      params
+    end
+  end
+
   @spec request(t, String.t, [String.t], keyword()) :: {:ok, binary} | {:error, any}
   defp request(client, path, args \\ [], params \\ []) do
     url = make_url(client, path)
@@ -539,4 +594,31 @@ defmodule IPFS.Client.Pin do
                 type: Map.get(v, "Type"),
                 count: Map.get(v, "Count")}
   end
+end
+
+defmodule IPFS.Client.Published do
+  @moduledoc """
+  Information about an object which has been published
+  """
+  defstruct [name: nil, value: ""]
+
+  @type t :: %IPFS.Client.Published{
+    name: String.t,
+    value: String.t
+  }
+
+  @doc false
+  @spec decode({:ok, binary()} | {:error, any()}) :: {:ok, t} | {:error, any()}
+  def decode({:ok, json}) do
+    case Poison.decode(json) do
+      {:ok, map} ->
+        {:ok, %__MODULE__{
+          name: map["Name"],
+          value: map["Value"]
+        }}
+      other -> other
+    end
+  end
+
+  def decode(other), do: other
 end

@@ -317,6 +317,38 @@ defmodule ClientTest do
     end
   end
 
+  test "Test name_publish request" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/name/publish", _, _) ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"Name":"QmTUESDMNR1Nmf6BzwSFBSRDG6H59PmH1CY4Jx22F3S9TV",
+                               "Value":"/ipfs/QmNgGKjCpUTqnoiTFVERnEhQpv9c2wsbHExMUFxzvRGYca"}
+                               """} end] do
+      assert IPFS.Client.name_publish("QmNgGKjCpUTqnoiTFVERnEhQpv9c2wsbHExMUFxzvRGYca") == {
+        :ok, %IPFS.Client.Published{
+          name: "QmTUESDMNR1Nmf6BzwSFBSRDG6H59PmH1CY4Jx22F3S9TV",
+          value: "/ipfs/QmNgGKjCpUTqnoiTFVERnEhQpv9c2wsbHExMUFxzvRGYca"
+          }}
+    end
+  end
+
+  test "Test name_resolve request" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/name/resolve", _, _) ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"Value":"/ipfs/QmNgGKjCpUTqnoiTFVERnEhQpv9c2wsbHExMUFxzvRGYca"}
+                               """} end] do
+      assert IPFS.Client.name_resolve() == {
+        :ok, %IPFS.Client.Published{
+          value: "/ipfs/QmNgGKjCpUTqnoiTFVERnEhQpv9c2wsbHExMUFxzvRGYca"
+          }}
+    end
+  end
+
   test "JSON parse failure" do
     with_mock HTTPoison, [get!: fn(
                            "http://localhost:5001/api/v0/version", _, _) ->

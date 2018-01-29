@@ -314,6 +314,8 @@ defmodule IPFS.Client do
   @doc ~S"""
   Publishes a hash to IPNS, which is mutable storage.
 
+  Note: this is a slower operation and may take some time.
+
   ## Example
 
       iex> IPFS.Client.name_publish(%__MODULE__{}, "QmPZ9gcCEpqKTo6aq61g2nXGUhM4i")
@@ -330,8 +332,9 @@ defmodule IPFS.Client do
       |> maybe_put_param(opts, :lifetime)
       |> maybe_put_param(opts, :ttl)
       |> maybe_put_param(opts, :key)
+    timeout = Keyword.get(opts, :timeout, 60_000)
 
-    request(client, "name/publish", [hash], request_params)
+    request(client, "name/publish", [hash], request_params, timeout)
     |> IPFS.Client.Published.decode()
   end
 
@@ -345,15 +348,16 @@ defmodule IPFS.Client do
         value: "/ipfs/QmNgGKjCpUTqnoiTFVERnEhQpv9c2wsbHExMUFxzvRGYca"
       }}
   """
-  @type resolve_opts :: [recursive: boolean(), nocache: boolean()]
+  @type resolve_opts :: [recursive: boolean(), nocache: boolean(), timeout: integer()]
   @spec name_resolve(t, binary() | nil, resolve_opts) :: {:ok, IPFS.Client.Published.t} | {:error, any()}
   def name_resolve(client \\ %__MODULE__{}, name \\ nil, opts \\ []) do
     request_params = []
       |> maybe_put_param(opts, :recursive)
       |> maybe_put_param(opts, :nocache)
     args = if name, do: [name], else: []
+    timeout = Keyword.get(opts, :timeout, 60_000)
 
-    request(client, "name/resolve", args, request_params)
+    request(client, "name/resolve", args, request_params, timeout)
     |> IPFS.Client.Published.decode()
   end
 
@@ -367,11 +371,11 @@ defmodule IPFS.Client do
   end
 
   @spec request(t, String.t, [String.t], keyword()) :: {:ok, binary} | {:error, any}
-  defp request(client, path, args \\ [], params \\ []) do
+  defp request(client, path, args \\ [], params \\ [], timeout \\ 5000) do
     url = make_url(client, path)
     ua = Map.get(client, :user_agent, @user_agent)
     arg_params = for arg <- args, do: {"arg", arg}
-    case HTTPoison.get!(url, [{"User-agent", ua}], params: arg_params ++ params) do
+    case HTTPoison.get!(url, [{"User-agent", ua}], params: arg_params ++ params, timeout: timeout, recv_timeout: timeout) do
       %{status_code: 200, body: body} -> {:ok, body}
       other -> {:error, other}
     end

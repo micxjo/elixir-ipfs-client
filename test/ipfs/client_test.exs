@@ -349,6 +349,23 @@ defmodule ClientTest do
     end
   end
 
+  test "Test key_gen request" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/key/gen", _, _) ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"Name":"my_key",
+                               "Id":"key_id"}
+                               """} end] do
+      assert IPFS.Client.key_gen("my_key") == {
+        :ok, %IPFS.Client.Key{
+          name: "my_key",
+          id: "key_id"
+          }}
+    end
+  end
+
   test "JSON parse failure" do
     with_mock HTTPoison, [get!: fn(
                            "http://localhost:5001/api/v0/version", _, _) ->

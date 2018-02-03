@@ -339,6 +339,27 @@ defmodule IPFS.Client do
   end
 
   @doc ~S"""
+  Generates a new key.
+
+  ## Example
+
+      iex> IPFS.Client.key_gen(%__MODULE__{}, "my_key", [type: "rsa", size: 3072])
+      {:ok, %IPFS.Client.Key{
+        name: "my_key",
+        id: "key_id"
+      }}
+  """
+  @type key_opts :: [type: String.t, size: integer()]
+  @spec key_gen(t, String.t, key_opts) :: {:ok, IPFS.Client.Key.t} | {:error, any()}
+  def key_gen(client \\ %__MODULE__{}, name, key_opts \\ []) do
+    type = Keyword.get(key_opts, :type, "rsa")
+    size = Keyword.get(key_opts, :size, 3072)
+
+    request(client, "key/gen", [name], [type: type, size: size])
+    |> IPFS.Client.Key.decode()
+  end
+
+  @doc ~S"""
   Publishes a hash to IPNS, which is mutable storage.
 
   ## Example
@@ -619,6 +640,33 @@ defmodule IPFS.Client.Published do
         {:ok, %__MODULE__{
           name: map["Name"],
           value: map["Value"]
+        }}
+      other -> other
+    end
+  end
+
+  def decode(other), do: other
+end
+
+defmodule IPFS.Client.Key do
+  @moduledoc """
+  Information about an IPFS key.
+  """
+  defstruct [name: "", id: ""]
+
+  @type t :: %IPFS.Client.Key{
+    name: String.t,
+    id: String.t
+  }
+
+  @doc false
+  @spec decode({:ok, binary()} | {:error, any()}) :: {:ok, t} | {:error, any()}
+  def decode({:ok, json}) do
+    case Poison.decode(json) do
+      {:ok, map} ->
+        {:ok, %__MODULE__{
+          name: map["Name"],
+          id: map["Id"]
         }}
       other -> other
     end

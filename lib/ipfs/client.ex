@@ -339,27 +339,6 @@ defmodule IPFS.Client do
   end
 
   @doc ~S"""
-  Generates a new key.
-
-  ## Example
-
-      iex> IPFS.Client.key_gen(%__MODULE__{}, "my_key", [type: "rsa", size: 3072])
-      {:ok, %IPFS.Client.Key{
-        name: "my_key",
-        id: "key_id"
-      }}
-  """
-  @type key_opts :: [type: String.t, size: integer()]
-  @spec key_gen(t, String.t, key_opts) :: {:ok, IPFS.Client.Key.t} | {:error, any()}
-  def key_gen(client \\ %__MODULE__{}, name, key_opts \\ []) do
-    type = Keyword.get(key_opts, :type, "rsa")
-    size = Keyword.get(key_opts, :size, 3072)
-
-    request(client, "key/gen", [name], [type: type, size: size])
-    |> IPFS.Client.Key.decode()
-  end
-
-  @doc ~S"""
   Publishes a hash to IPNS, which is mutable storage.
 
   ## Example
@@ -380,6 +359,27 @@ defmodule IPFS.Client do
 
     request(client, "name/resolve", args, request_params, timeout)
     |> IPFS.Client.Published.decode()
+  end
+
+  @doc ~S"""
+  Generates a new key.
+
+  ## Example
+
+      iex> IPFS.Client.key_gen(%__MODULE__{}, "my_key", [type: "rsa", size: 3072])
+      {:ok, %IPFS.Client.Key{
+        name: "my_key",
+        id: "key_id"
+      }}
+  """
+  @type key_opts :: [type: String.t, size: integer()]
+  @spec key_gen(t, String.t, key_opts) :: {:ok, IPFS.Client.Key.t} | {:error, any()}
+  def key_gen(client \\ %__MODULE__{}, name, key_opts \\ []) do
+    type = Keyword.get(key_opts, :type, "rsa")
+    size = Keyword.get(key_opts, :size, 3072)
+
+    request(client, "key/gen", [name], [type: type, size: size])
+    |> IPFS.Client.Key.decode()
   end
 
   @spec maybe_put_param([], keyword(), atom()) :: []
@@ -639,7 +639,7 @@ defmodule IPFS.Client.Published do
       {:ok, map} ->
         {:ok, %__MODULE__{
           name: map["Name"],
-          value: map["Value"]
+          value: map["Value"] || map["Path"]
         }}
       other -> other
     end

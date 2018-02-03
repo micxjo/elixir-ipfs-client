@@ -340,7 +340,7 @@ defmodule ClientTest do
                              %HTTPoison.Response{
                                status_code: 200,
                                body: """
-                               {"Value":"/ipfs/QmNgGKjCpUTqnoiTFVERnEhQpv9c2wsbHExMUFxzvRGYca"}
+                               {"Path":"/ipfs/QmNgGKjCpUTqnoiTFVERnEhQpv9c2wsbHExMUFxzvRGYca"}
                                """} end] do
       assert IPFS.Client.name_resolve() == {
         :ok, %IPFS.Client.Published{

@@ -366,6 +366,22 @@ defmodule ClientTest do
     end
   end
 
+  test "Test key_list request" do
+    with_mock HTTPoison, [get!: fn(
+                           "http://localhost:5001/api/v0/key/list", _, _) ->
+                             %HTTPoison.Response{
+                               status_code: 200,
+                               body: """
+                               {"Keys":[{"Name":"self","Id":"QmSDvVLLVbgrB2DPpowWBFfGLW8TQD38K7j5uCRsvtge7Q"}]}
+                               """} end] do
+      assert IPFS.Client.key_list() == {
+        :ok, [%IPFS.Client.Key{
+          name: "self",
+          id: "QmSDvVLLVbgrB2DPpowWBFfGLW8TQD38K7j5uCRsvtge7Q"
+        }]}
+    end
+  end
+
   test "JSON parse failure" do
     with_mock HTTPoison, [get!: fn(
                            "http://localhost:5001/api/v0/version", _, _) ->

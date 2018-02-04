@@ -382,6 +382,23 @@ defmodule IPFS.Client do
     |> IPFS.Client.Key.decode()
   end
 
+  @doc ~S"""
+  Generates a new key.
+
+  ## Example
+
+      iex> IPFS.Client.key_list(%__MODULE__{})
+      {:ok, [%IPFS.Client.Key{
+        name: "my_key",
+        id: "key_id"
+      }]}
+  """
+  @spec key_list(t) :: {:ok, IPFS.Client.Key.t} | {:error, any()}
+  def key_list(client \\ %__MODULE__{}) do
+    request(client, "key/list")
+    |> IPFS.Client.Key.decode_list()
+  end
+
   @spec maybe_put_param([], keyword(), atom()) :: []
   defp maybe_put_param(params, opts, key) do
     if value = Keyword.get(opts, key) do
@@ -664,13 +681,32 @@ defmodule IPFS.Client.Key do
   def decode({:ok, json}) do
     case Poison.decode(json) do
       {:ok, map} ->
-        {:ok, %__MODULE__{
-          name: map["Name"],
-          id: map["Id"]
-        }}
+        {:ok, decode_item(map)}
       other -> other
     end
   end
 
   def decode(other), do: other
+
+  @doc false
+  @spec decode_list({:ok, binary()} | {:error, any()}) :: {:ok, [t]} | {:error, any()}
+  def decode_list({:ok, json}) do
+    case Poison.decode(json) do
+      {:ok, list} ->
+        {:ok,
+          list["Keys"] |> Enum.map(&decode_item/1)
+        }
+      other -> other
+    end
+  end
+
+  def decode_list(other), do: other
+
+  @spec decode_item(%{}) :: t
+  defp decode_item(map) do
+    %__MODULE__{
+      name: map["Name"],
+      id: map["Id"]
+    }
+  end
 end
